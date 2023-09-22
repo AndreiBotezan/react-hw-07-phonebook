@@ -3,14 +3,10 @@ import Section from 'components/Section/Section';
 import ContactForm from 'components/ContactForm/ContactForm';
 import Filter from 'components/Filter/Filter';
 import ContactList from 'components/ContactList/ContactList';
-import Notification from 'components/Notification/Notification';
-import { useSelector } from 'react-redux';
-//import { getContacts } from 'redux/ContactSlice/contactSlice';
-import { getItems } from 'redux/contacts/contactsSelectors';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-const App = () => {
-  const contacts = useSelector(getItems);
-
+function App() {
   return (
     <Wrapper>
       <Section title={'Phonebook'}>
@@ -19,14 +15,11 @@ const App = () => {
 
       <Section title={'Contacts'}>
         <Filter />
-        {contacts.length > 0 ? (
-          <ContactList />
-        ) : (
-          <Notification message="There are no contacts yet" />
-        )}
+        <ContactList />
       </Section>
+      <ToastContainer autoClose={3000} theme="colored" />
     </Wrapper>
   );
-};
+}
 
 export default App;

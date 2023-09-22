@@ -1,43 +1,16 @@
-import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
-import logger from 'redux-logger';
-import {
-  persistStore,
-  persistReducer,
-  FLUSH,
-  REHYDRATE,
-  PAUSE,
-  PERSIST,
-  PURGE,
-  REGISTER,
-} from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
-//import { contactSliceReducer } from './ContactSlice/contactSlice';
-import contactsReducer from './contacts/contactsReducer';
+import { configureStore } from '@reduxjs/toolkit';
+import { contactsApi } from './contacts/contactsApi';
+import { filterSlice } from './contacts/contactsSlice';
 
-const middleware = [
-  ...getDefaultMiddleware({
-    serializableCheck: {
-      ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-    },
-  }),
-  logger,
-];
-
-// Saving items to Local Storage
-const itemsPersistConfig = {
-  key: 'items',
-  storage,
-  blacklist: ['filter'],
-};
-
-const Store = configureStore({
-  //reducer: { contacts: contactSliceReducer },
+const store = configureStore({
   reducer: {
-    contacts: persistReducer(itemsPersistConfig, contactsReducer),
+    [contactsApi.reducerPath]: contactsApi.reducer,
+    filter: filterSlice.reducer,
   },
-  middleware,
-  //devTools: process.env.NODE_ENV !== 'production',
+  middleware: getDefaultMiddleware => [
+    ...getDefaultMiddleware(),
+    contactsApi.middleware,
+  ],
+  devTools: process.env.NODE_ENV === 'development',
 });
-const persistor = persistStore(Store);
-
-export const store = { Store, persistor };
+export default store;

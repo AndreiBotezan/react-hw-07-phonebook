@@ -1,84 +1,75 @@
 import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-//import {addContact, getContacts, changeFilter} from 'redux/ContactSlice/contactSlice';
-import { actions } from '../../redux/contacts/contactsActions';
-import { getItems, getFilter } from 'redux/contacts/contactsSelectors';
+import {
+  useGetContactsQuery,
+  useAddContactMutation,
+} from 'redux/contacts/contactsApi';
 import Label from './Label/Label';
 import InputName from './InputName/InputName';
 import InputNumber from './InputNumber/InputNumber';
 import Button from 'components/Button/Button';
+import { toast } from 'react-toastify';
 import s from './ContactForm.module.css';
 
-function ContactForm() {
-  const [name, setName] = useState('');
-  const [number, setNumber] = useState('');
+const ContactForm = () => {
+  const [form, setForm] = useState({ name: '', phone: '' });
 
-  const contacts = useSelector(getItems);
-  const filterValue = useSelector(getFilter);
-  const dispatch = useDispatch();
+  const { data: contacts } = useGetContactsQuery();
+  const [addContact] = useAddContactMutation();
 
-  const handleContactInfo = () => {
-    dispatch(actions.addContact(name, number));
-    if (filterValue !== '') {
-      dispatch(actions.changeFilter(''));
-    }
+  const handleNameChange = event => {
+    const { name, value } = event.currentTarget;
+    setForm(prevForm => ({ ...prevForm, [name]: value }));
+  };
+  const handlePhoneChange = phoneValue => {
+    setForm(prevForm => ({ ...prevForm, phone: phoneValue }));
   };
 
   const handleSubmit = event => {
     event.preventDefault();
 
-    if (
-      contacts.find(
-        contact => contact.name.toLowerCase() === name.toLowerCase()
-      )
-    ) {
-      if (filterValue !== '') {
-        dispatch(actions.changeFilter(''));
-      }
-
-      return alert(`${name} is already in contacts`);
+    // Rules for fields
+    if (form.name === '' && form.phone === '') {
+      return toast.warn('Enter data of contact');
+    }
+    if (form.name === '') {
+      return toast.warn('Enter the name of contact');
     }
 
-    handleContactInfo();
+    if (form.phone === '') {
+      return toast.warn('Enter the phone number of contact');
+    }
+
+    if (
+      contacts.find(
+        contact => contact.name.toLowerCase() === form.name.toLowerCase()
+      )
+    ) {
+      resetForm();
+      return toast.info(`${form.name} is already in contacts`);
+    }
+
+    toast.success(`${form.name} is added to your contacts`);
+    addContact(form);
     resetForm();
   };
 
-  const handleChange = event => {
-    const { name, value } = event.currentTarget;
-
-    switch (name) {
-      case 'name':
-        setName(value);
-        break;
-
-      case 'number': {
-        setNumber(value);
-        break;
-      }
-
-      default:
-        return;
-    }
-  };
-
   const resetForm = () => {
-    setName('');
-    setNumber('');
+    setForm({ name: '', phone: '' });
   };
 
   return (
     <form onSubmit={handleSubmit} className={s.form}>
       <Label labelTitle={'Name'}>
-        <InputName name={name} onNameChange={handleChange} />
+        <InputName name={form.name} onNameChange={handleNameChange} />
       </Label>
 
       <Label labelTitle={'Number'}>
-        <InputNumber number={number} onNumberChange={handleChange} />
+        <InputNumber phone={form.phone} onNumberChange={handlePhoneChange} />
       </Label>
 
-      <Button type={'submit'} title={'Add contact'} />
+      <Button type={'submit'} symbol={'+'} title={'Add contact'} />
     </form>
   );
-}
+};
 
 export default ContactForm;

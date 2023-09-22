@@ -1,37 +1,72 @@
-import { useDispatch, useSelector } from 'react-redux';
-//import { getContacts, changeFilter, deleteContact} from 'redux/ContactSlice/contactSlice';
-import { actions } from '../../redux/contacts/contactsActions';
-import { getItems, getFilter } from 'redux/contacts/contactsSelectors';
+import { useSelector } from 'react-redux';
+import {
+  useGetContactsQuery,
+  useDeleteContactMutation,
+} from 'redux/contacts/contactsApi';
+import { getFilter } from 'redux/contacts/contactsSlice';
+import BarLoader from 'react-spinners/BarLoader';
+import Notification from 'components/Notification/Notification';
+import sprite from '../../images/icons.svg';
+import { toast } from 'react-toastify';
 import s from './ContactList.module.css';
 
 const ContactList = () => {
-  const contacts = useSelector(getItems);
+  const { data: contacts, isLoading, isSuccess } = useGetContactsQuery();
+  const [deleteContact] = useDeleteContactMutation();
   const filterValue = useSelector(getFilter);
 
-  const dispatch = useDispatch();
-  const handleDeleteContact = contactId => {
-    dispatch(actions.deleteContact(contactId));
+  const getContactsList = () => {
+    if (filterValue === '') {
+      return contacts;
+    }
+
+    return contacts.filter(({ name }) =>
+      name.toLowerCase().includes(filterValue.toLowerCase().trim())
+    );
   };
+
+  const items = getContactsList();
 
   return (
     <ul className={s.contacts}>
-      {contacts
-        .filter(({ name }) => name.toLowerCase().includes(filterValue.trim()))
-        .map(({ id, name, number }) => (
+      {isLoading && (
+        <div className={s.loader}>
+          <BarLoader color={'#6495ed'} />
+        </div>
+      )}
+
+      {isSuccess &&
+        items.map(({ id, name, phone }) => (
           <li key={id} className={s.item}>
-            <div>
+            <a href={`tel:${phone}`} className={s.contact}>
               <p className={s.name}>{name}</p>
-              <p className={s.number}>{number}</p>
-            </div>
+              <p className={s.phone}>
+                <svg className={s.phone_icon} aria-label="logo">
+                  <use href={`${sprite}#phone`}></use>
+                </svg>
+                <span className={s.phone_number}>{phone}</span>
+              </p>
+            </a>
             <button
               type="button"
-              onClick={() => handleDeleteContact(id)}
+              onClick={() => {
+                toast.success(`${name} is removed from your contacts`);
+                deleteContact(id);
+              }}
               className={s.delete}
             >
               <i className="fa fa-times" aria-hidden="true"></i>
             </button>
           </li>
         ))}
+
+      {items && items.length === 0 && filterValue !== '' && (
+        <Notification message="There are no matched contacts" />
+      )}
+
+      {items && items.length === 0 && filterValue === '' && (
+        <Notification message="There are no contacts yet" />
+      )}
     </ul>
   );
 };
